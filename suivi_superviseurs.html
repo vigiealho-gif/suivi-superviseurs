@@ -641,11 +641,27 @@ function exportExcel() {
     "Blocage — Choix","Solution — Choix","Arguments — Choix","Modifié par"]];
   tableData.forEach(r => rows.push([
     r.r,r.d,r.a,r.dos,r.rei,
-    (r.bc||[]).join('\n'),(r.sc||[]).join('\n'),(r.ac||[]).join('\n'),r.by||''
+    (r.bc||[]).join(' | '),(r.sc||[]).join(' | '),(r.ac||[]).join(' | '),r.by||''
   ]));
   const ws = XLSX.utils.aoa_to_sheet(rows);
   ws['!cols'] = [{wch:14},{wch:12},{wch:16},{wch:13},{wch:10},
-    {wch:38},{wch:38},{wch:38},{wch:12}];
+    {wch:50},{wch:50},{wch:50},{wch:12}];
+
+  // Style header row
+  const range = XLSX.utils.decode_range(ws['!ref']);
+  for (let C = range.s.c; C <= range.e.c; C++) {
+    const addr = XLSX.utils.encode_cell({r:0, c:C});
+    if (!ws[addr]) continue;
+    ws[addr].s = { font:{bold:true, color:{rgb:"FFFFFF"}}, fill:{fgColor:{rgb:"1A3A6B"}}, alignment:{wrapText:true} };
+  }
+  // WrapText for data cells
+  for (let R = 1; R <= range.e.r; R++) {
+    for (let C = 5; C <= 7; C++) {
+      const addr = XLSX.utils.encode_cell({r:R, c:C});
+      if (!ws[addr]) continue;
+      ws[addr].s = { alignment:{wrapText:true, vertical:"top"} };
+    }
+  }
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, ws, "Feuil1");
   XLSX.writeFile(wb, "suivi_superviseurs.xlsx");
