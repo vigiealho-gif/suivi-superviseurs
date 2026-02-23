@@ -7,39 +7,9 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 
 <!-- Firebase SDK -->
-<!-- Firebase compat SDK — fonctionne partout -->
+<!-- Firebase compat SDK -->
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
-<script>
-  const firebaseConfig = {
-    apiKey: "AIzaSyAInuOMBu-cXrb3-owI92VZ_f8TDJwVNNU",
-    authDomain: "suivi-superviseurs.firebaseapp.com",
-    databaseURL: "https://suivi-superviseurs-default-rtdb.firebaseio.com",
-    projectId: "suivi-superviseurs",
-    storageBucket: "suivi-superviseurs.firebasestorage.app",
-    messagingSenderId: "858642119661",
-    appId: "1:858642119661:web:c076d8e2c3f93cb6bb85e4"
-  };
-
-  firebase.initializeApp(firebaseConfig);
-  const db = firebase.database();
-  const dbRef = db.ref('suivi/data');
-
-  window._fbSave = async (data) => {
-    await dbRef.set(data);
-  };
-  window._fbListen = (callback) => {
-    dbRef.on('value', (snapshot) => {
-      callback(snapshot.val());
-    });
-  };
-  window._fbGet = async () => {
-    const snap = await dbRef.once('value');
-    return snap.val();
-  };
-  window._firebaseReady = true;
-  document.dispatchEvent(new Event('firebase-ready'));
-</script>
 
 <style>
 @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=DM+Mono:wght@400;500&display=swap');
@@ -431,8 +401,7 @@ const DEFAULT = [
 let currentUser = '';
 let tableData = [];
 let cRI = -1, cF = '', cCh = [];
-let fbReady = false;
-let isRemoteUpdate = false;
+let dbRef = null;
 
 // ── LOGIN ──
 function login() {
@@ -448,73 +417,67 @@ function login() {
 // ── FIREBASE ──
 function initFirebase() {
   setStatus('busy', 'Connexion...');
+  try {
+    const firebaseConfig = {
+      apiKey: "AIzaSyAInuOMBu-cXrb3-owI92VZ_f8TDJwVNNU",
+      authDomain: "suivi-superviseurs.firebaseapp.com",
+      databaseURL: "https://suivi-superviseurs-default-rtdb.firebaseio.com",
+      projectId: "suivi-superviseurs",
+      storageBucket: "suivi-superviseurs.firebasestorage.app",
+      messagingSenderId: "858642119661",
+      appId: "1:858642119661:web:c076d8e2c3f93cb6bb85e4"
+    };
 
-  // Check if Firebase was properly configured
-  const isConfigured = true;
+    if (!firebase.apps.length) {
+      firebase.initializeApp(firebaseConfig);
+    }
 
-  if (!isConfigured) {
-    document.getElementById('notConfigured').style.display = 'block';
-    setStatus('off', 'Non configuré');
-    // Still work locally with default data
-    tableData = JSON.parse(JSON.stringify(DEFAULT));
-    renderTable();
-    return;
-  }
+    dbRef = firebase.database().ref('suivi/data');
 
-  document.addEventListener('firebase-ready', () => {
-    fbReady = true;
-
-    // Listen for realtime changes
-    window._fbListen((data) => {
+    // Écoute en temps réel
+    dbRef.on('value', (snapshot) => {
+      const data = snapshot.val();
       if (data) {
         const incoming = Object.values(data);
-        // Only update if data is different from what we sent
-        if (JSON.stringify(incoming) !== JSON.stringify(tableData) || tableData.length === 0) {
-          isRemoteUpdate = true;
+        if (JSON.stringify(incoming) !== JSON.stringify(tableData)) {
           tableData = incoming;
           renderTable();
-          if (tableData.length > 0) {
-            showToast('🔄 Tableau mis à jour');
-          }
-          isRemoteUpdate = false;
+          showToast('🔄 Tableau synchronisé');
         }
       } else {
-        // No data yet — push default
+        // Première utilisation — pousser les données par défaut
         tableData = JSON.parse(JSON.stringify(DEFAULT));
         save();
         renderTable();
       }
       setStatus('on', 'En direct ⚡');
+    }, (error) => {
+      setStatus('off', 'Erreur connexion');
+      showToast('⚠️ Impossible de se connecter à Firebase');
+      // Fallback local
+      tableData = JSON.parse(JSON.stringify(DEFAULT));
+      renderTable();
     });
 
-    // Track online presence
-    trackPresence();
-  });
+  } catch(e) {
+    setStatus('off', 'Erreur');
+    tableData = JSON.parse(JSON.stringify(DEFAULT));
+    renderTable();
+  }
 }
 
 async function save() {
-  if (!fbReady) return;
+  if (!dbRef) return;
   setStatus('busy', 'Sauvegarde...');
   try {
     const obj = {};
     tableData.forEach((row, i) => obj[i] = row);
-    await window._fbSave(obj);
+    await dbRef.set(obj);
     setStatus('on', 'En direct ⚡');
   } catch(e) {
     setStatus('off', 'Erreur sync');
     showToast('⚠️ Erreur de synchronisation');
   }
-}
-
-function trackPresence() {
-  // Simple presence: save username with timestamp every 30s
-  const presenceKey = 'suivi/online/' + currentUser.replace(/\s/g,'_');
-  const updatePresence = async () => {
-    try {
-      const { getDatabase, ref, set, onDisconnect } = await import("https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js");
-      // We use a simpler approach via the global db
-    } catch(e) {}
-  };
 }
 
 function setStatus(state, label) {
