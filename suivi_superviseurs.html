@@ -356,10 +356,6 @@ td.mcell:hover::after { opacity:1; }
           <th>Date</th>
           <th>Log Agent</th>
           <th>Num Dossier</th>
-          <th>Col.5</th>
-          <th>Blocage rencontré</th>
-          <th>Solution proposée</th>
-          <th>Arguments</th>
           <th>Réitération</th>
           <th class="mc">🔵 Blocage — Choix</th>
           <th class="mc">🟢 Solution — Choix</th>
@@ -393,24 +389,16 @@ td.mcell:hover::after { opacity:1; }
 <script>
 // ── CHOICES ──
 const BLOCAGES = [
-  "Il se sent bloqué par le process",
-  "Il n'est pas satisfait de la réponse apportée par le conseiller",
-  "Il estime que sa demande n'est pas comprise",
-  "Il souhaite une décision plus rapide ou définitive",
-  "Il pense qu'un responsable a plus de pouvoir de décision",
-  "Il est en situation de multi-réitération",
-  "Il est très émotionnel / en colère",
-  "Il veut faire pression pour obtenir un geste commercial",
-  "Il menace de laisser un avis négatif ou de faire un signalement",
-  "Il cherche simplement à être rassuré ou reconnu",
-  "Par principe, il demande toujours un responsable"
+  "Refus de la demande du client",
+  "Blocage lié à l'application du process",
+  "Solution apportée ne répondant pas aux attentes du client",
+  "Délai de traitement anormalement long",
+  "La réponse du vendeur ne convient pas au client",
+  "Réponses contradictoires communiquées au client"
 ];
 const SOLUTIONS = [
-  "Faire un arbitrage exceptionnel hors process",
-  "Maintenir la position avec une posture ferme",
-  "Donner une explication claire et pédagogique du process",
+  "Arbitrage exceptionnel hors process (remboursement)",
   "Proposer une alternative conforme au process",
-  "Apporter une décision finale claire",
   "Accorder un geste commercial adapté et justifié"
 ];
 const ARGUMENTS = [
@@ -556,10 +544,6 @@ function renderTable() {
       <td class="tdate" contenteditable="true" onblur="upd(${i},'d',this.innerText)">${esc(row.d)}</td>
       <td contenteditable="true" onblur="upd(${i},'a',this.innerText)">${esc(row.a)}</td>
       <td class="tn" contenteditable="true" onblur="upd(${i},'dos',this.innerText)">${esc(row.dos)}</td>
-      <td contenteditable="true" onblur="upd(${i},'c5',this.innerText)">${esc(row.c5)}</td>
-      <td class="ttxt" contenteditable="true" onblur="upd(${i},'bt',this.innerText)">${esc(row.bt)}</td>
-      <td class="ttxt" contenteditable="true" onblur="upd(${i},'st',this.innerText)">${esc(row.st)}</td>
-      <td class="ttxt" contenteditable="true" onblur="upd(${i},'at',this.innerText)">${esc(row.at)}</td>
       <td class="tn" contenteditable="true" onblur="upd(${i},'rei',this.innerText)">${esc(row.rei)}</td>
       <td class="mcell" onclick="openModal(${i},'bc')">
         ${renderTags(row.bc,'b')}
@@ -647,16 +631,15 @@ async function addRow() {
 
 // ── EXPORT ──
 function exportExcel() {
-  const rows = [["Responsable","Date","Log Agent","Num Dossier","Col.5",
-    "Blocage rencontré","Solution proposée","Arguments","Réitération",
+  const rows = [["Responsable","Date","Log Agent","Num Dossier","Réitération",
     "Blocage — Choix","Solution — Choix","Arguments — Choix","Modifié par"]];
   tableData.forEach(r => rows.push([
-    r.r,r.d,r.a,r.dos,r.c5,r.bt,r.st,r.at,r.rei,
+    r.r,r.d,r.a,r.dos,r.rei,
     (r.bc||[]).join('\n'),(r.sc||[]).join('\n'),(r.ac||[]).join('\n'),r.by||''
   ]));
   const ws = XLSX.utils.aoa_to_sheet(rows);
-  ws['!cols'] = [{wch:14},{wch:12},{wch:16},{wch:13},{wch:6},
-    {wch:34},{wch:34},{wch:34},{wch:10},{wch:34},{wch:34},{wch:34},{wch:12}];
+  ws['!cols'] = [{wch:14},{wch:12},{wch:16},{wch:13},{wch:10},
+    {wch:38},{wch:38},{wch:38},{wch:12}];
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, ws, "Feuil1");
   XLSX.writeFile(wb, "suivi_superviseurs.xlsx");
