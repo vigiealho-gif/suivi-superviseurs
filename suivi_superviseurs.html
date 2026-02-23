@@ -352,7 +352,8 @@ td.mcell:hover::after { opacity:1; }
     <table>
       <thead>
         <tr>
-          <th>Responsable</th>
+          <th style="width:40px;text-align:center;">🗑️</th>
+        <th>Responsable</th>
           <th>Date</th>
           <th>Log Agent</th>
           <th>Num Dossier</th>
@@ -540,6 +541,9 @@ function renderTable() {
   tableData.forEach((row, i) => {
     const tr = document.createElement('tr');
     tr.innerHTML = `
+      <td style="text-align:center;vertical-align:middle;">
+        <button onclick="deleteRow(${i})" style="background:none;border:none;cursor:pointer;font-size:16px;color:#e53935;padding:2px 6px;border-radius:4px;transition:background 0.15s;" onmouseover="this.style.background='#ffebee'" onmouseout="this.style.background='none'" title="Supprimer la ligne">🗑️</button>
+      </td>
       <td class="tname" contenteditable="true" onblur="upd(${i},'r',this.innerText)">${esc(row.r)}</td>
       <td class="tdate" contenteditable="true" onblur="upd(${i},'d',this.innerText)">${esc(row.d)}</td>
       <td contenteditable="true" onblur="upd(${i},'a',this.innerText)">${esc(row.a)}</td>
@@ -627,6 +631,15 @@ async function addRow() {
   renderTable();
   await save();
   document.querySelector('.table-wrapper').scrollTop = 999999;
+}
+
+// ── DELETE ROW ──
+async function deleteRow(i) {
+  if (!confirm('Supprimer cette ligne ?')) return;
+  tableData.splice(i, 1);
+  renderTable();
+  await save();
+  showToast('🗑️ Ligne supprimée');
 }
 
 // ── EXPORT ──
