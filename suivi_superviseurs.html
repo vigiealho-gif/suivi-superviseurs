@@ -7,14 +7,10 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 
 <!-- Firebase SDK -->
-<script type="module">
-  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-  import { getDatabase, ref, onValue, set, get } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
-
-  // ════════════════════════════════════════════════════
-  // 🔧 CONFIGURATION FIREBASE — À REMPLACER PAR LES VÔTRES
-  // Instructions dans le bandeau rouge en bas de page
-  // ════════════════════════════════════════════════════
+<!-- Firebase compat SDK — fonctionne partout -->
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+<script>
   const firebaseConfig = {
     apiKey: "AIzaSyAInuOMBu-cXrb3-owI92VZ_f8TDJwVNNU",
     authDomain: "suivi-superviseurs.firebaseapp.com",
@@ -22,25 +18,23 @@
     projectId: "suivi-superviseurs",
     storageBucket: "suivi-superviseurs.firebasestorage.app",
     messagingSenderId: "858642119661",
-    appId: "1:858642119661:web:c076d8e2c3f93cb6bb85e4",
-    measurementId: "G-5TM45H3R09"
+    appId: "1:858642119661:web:c076d8e2c3f93cb6bb85e4"
   };
 
-  const app = initializeApp(firebaseConfig);
-  const db  = getDatabase(app);
-  const dbRef = ref(db, 'suivi/data');
+  firebase.initializeApp(firebaseConfig);
+  const db = firebase.database();
+  const dbRef = db.ref('suivi/data');
 
-  // Expose to global scope
   window._fbSave = async (data) => {
-    await set(dbRef, data);
+    await dbRef.set(data);
   };
   window._fbListen = (callback) => {
-    onValue(dbRef, (snapshot) => {
+    dbRef.on('value', (snapshot) => {
       callback(snapshot.val());
     });
   };
   window._fbGet = async () => {
-    const snap = await get(dbRef);
+    const snap = await dbRef.once('value');
     return snap.val();
   };
   window._firebaseReady = true;
