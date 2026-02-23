@@ -44,24 +44,29 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);}
 }
 .login-card {
   background:white; border-radius:18px; padding:40px 44px;
-  width:380px; box-shadow:0 24px 64px rgba(0,0,0,0.25); text-align:center;
+  width:400px; box-shadow:0 24px 64px rgba(0,0,0,0.25); text-align:center;
 }
 .login-card .logo { font-size: 40px; margin-bottom: 12px; }
 .login-card h1 { font-size:22px; font-weight:700; color:var(--primary); margin-bottom:6px; }
 .login-card p { color:var(--soft); font-size:13px; margin-bottom:28px; }
+.input-group { position:relative; margin-bottom:14px; }
+.input-group label {
+  display:block; text-align:left; font-size:12px; font-weight:600;
+  color:var(--soft); margin-bottom:5px; text-transform:uppercase; letter-spacing:0.5px;
+}
 .login-card input {
   width:100%; padding:12px 14px; border:2px solid var(--border);
   border-radius:10px; font-family:'DM Sans',sans-serif; font-size:14px;
-  margin-bottom:14px; transition:border-color 0.2s; outline:none;
+  transition:border-color 0.2s; outline:none;
 }
 .login-card input:focus { border-color:var(--accent); }
 .login-btn {
   width:100%; padding:12px; background:var(--primary); color:white;
   border:none; border-radius:10px; font-family:'DM Sans',sans-serif;
-  font-size:15px; font-weight:600; cursor:pointer; transition:background 0.2s;
+  font-size:15px; font-weight:600; cursor:pointer; transition:background 0.2s; margin-top:6px;
 }
 .login-btn:hover { background:#0f2450; }
-.login-error { color:#e53935; font-size:12px; margin-top:8px; display:none; }
+.login-error { color:#e53935; font-size:12px; margin-top:10px; display:none; background:#ffebee; padding:8px 12px; border-radius:8px; }
 
 /* ── APP ── */
 .app { display:none; }
@@ -264,11 +269,19 @@ td.mcell:hover::after { opacity:1; }
   <div class="login-card">
     <div class="logo">📋</div>
     <h1>Suivi Superviseurs</h1>
-    <p>Tableau collaboratif — toutes les modifications sont visibles par tous en temps réel</p>
-    <input type="text" id="nameInput" placeholder="Votre prénom (ex : SAFAE)"
-           maxlength="30" onkeydown="if(event.key==='Enter') login()">
-    <button class="login-btn" onclick="login()">Accéder au tableau →</button>
-    <p class="login-error" id="loginError">Veuillez entrer votre prénom</p>
+    <p>Connectez-vous pour accéder au tableau collaboratif</p>
+    <div class="input-group">
+      <label>Identifiant</label>
+      <input type="text" id="loginUser" placeholder="Votre identifiant"
+             maxlength="30" onkeydown="if(event.key==='Enter') document.getElementById('loginPass').focus()">
+    </div>
+    <div class="input-group">
+      <label>Mot de passe</label>
+      <input type="password" id="loginPass" placeholder="Votre mot de passe"
+             maxlength="30" onkeydown="if(event.key==='Enter') login()">
+    </div>
+    <button class="login-btn" onclick="login()">🔐 Se connecter</button>
+    <p class="login-error" id="loginError">❌ Identifiant ou mot de passe incorrect</p>
   </div>
 </div>
 
@@ -412,11 +425,26 @@ let cRI = -1, cF = '', cCh = [];
 let syncInterval = null;
 let lastSavedHash = '';
 
+// ── UTILISATEURS AUTORISÉS (identifiant: mot de passe) ──
+const USERS = {
+  "SAFAE":    "safae123",
+  "FATIMA":   "fatima123",
+  "CHAIMAE":  "chaimae123",
+  "IKRAM":    "ikram123",
+  "ADNANE":   "adnane123",
+  "ADMIN":    "admin2024"
+};
+
 // ── LOGIN ──
 function login() {
-  const n = document.getElementById('nameInput').value.trim();
-  if (!n) { document.getElementById('loginError').style.display='block'; return; }
-  currentUser = n.toUpperCase();
+  const user = document.getElementById('loginUser').value.trim().toUpperCase();
+  const pass = document.getElementById('loginPass').value.trim();
+  const err  = document.getElementById('loginError');
+
+  if (!user || !pass) { err.style.display='block'; err.textContent='❌ Veuillez remplir tous les champs'; return; }
+  if (!USERS[user] || USERS[user] !== pass) { err.style.display='block'; err.textContent='❌ Identifiant ou mot de passe incorrect'; return; }
+
+  currentUser = user;
   document.getElementById('userDisplay').textContent = currentUser;
   document.getElementById('loginScreen').style.display = 'none';
   document.getElementById('appScreen').style.display = 'block';
