@@ -7,9 +7,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 
 <!-- Firebase SDK -->
-<!-- Firebase compat SDK -->
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+
 
 <style>
 @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=DM+Mono:wght@400;500&display=swap');
@@ -397,11 +395,15 @@ const DEFAULT = [
   {r:"Chaimae",d:"2026-02-20",a:"N2ALH_camezian",dos:"121057966",c5:"",bt:"Remboursement non reçu",st:"RAS",at:"Le client confirme la recéption de son RBT finallement",rei:"",bc:[],sc:[],ac:[],by:""}
 ];
 
+// ── CONFIG FIREBASE REST ──
+const FB_URL = "https://suivi-superviseurs-default-rtdb.firebaseio.com/suivi/data";
+
 // ── STATE ──
 let currentUser = '';
 let tableData = [];
 let cRI = -1, cF = '', cCh = [];
-let dbRef = null;
+let syncInterval = null;
+let lastSavedHash = '';
 
 // ── LOGIN ──
 function login() {
@@ -411,68 +413,67 @@ function login() {
   document.getElementById('userDisplay').textContent = currentUser;
   document.getElementById('loginScreen').style.display = 'none';
   document.getElementById('appScreen').style.display = 'block';
-  initFirebase();
+  initData();
 }
 
-// ── FIREBASE ──
-function initFirebase() {
+// ── INIT DATA ──
+async function initData() {
   setStatus('busy', 'Connexion...');
   try {
-    const firebaseConfig = {
-      apiKey: "AIzaSyAInuOMBu-cXrb3-owI92VZ_f8TDJwVNNU",
-      authDomain: "suivi-superviseurs.firebaseapp.com",
-      databaseURL: "https://suivi-superviseurs-default-rtdb.firebaseio.com",
-      projectId: "suivi-superviseurs",
-      storageBucket: "suivi-superviseurs.firebasestorage.app",
-      messagingSenderId: "858642119661",
-      appId: "1:858642119661:web:c076d8e2c3f93cb6bb85e4"
-    };
-
-    if (!firebase.apps.length) {
-      firebase.initializeApp(firebaseConfig);
-    }
-
-    dbRef = firebase.database().ref('suivi/data');
-
-    // Écoute en temps réel
-    dbRef.on('value', (snapshot) => {
-      const data = snapshot.val();
-      if (data) {
-        const incoming = Object.values(data);
-        if (JSON.stringify(incoming) !== JSON.stringify(tableData)) {
-          tableData = incoming;
-          renderTable();
-          showToast('🔄 Tableau synchronisé');
-        }
-      } else {
-        // Première utilisation — pousser les données par défaut
-        tableData = JSON.parse(JSON.stringify(DEFAULT));
-        save();
-        renderTable();
-      }
-      setStatus('on', 'En direct ⚡');
-    }, (error) => {
-      setStatus('off', 'Erreur connexion');
-      showToast('⚠️ Impossible de se connecter à Firebase');
-      // Fallback local
+    const res = await fetch(FB_URL + '.json');
+    const data = await res.json();
+    if (data) {
+      tableData = Array.isArray(data) ? data : Object.values(data);
+    } else {
       tableData = JSON.parse(JSON.stringify(DEFAULT));
-      renderTable();
-    });
-
+      await save();
+    }
+    lastSavedHash = JSON.stringify(tableData);
+    renderTable();
+    setStatus('on', 'En direct ⚡');
+    startSync();
   } catch(e) {
-    setStatus('off', 'Erreur');
+    setStatus('off', 'Hors ligne');
     tableData = JSON.parse(JSON.stringify(DEFAULT));
     renderTable();
   }
 }
 
+// ── SYNC toutes les 4 secondes ──
+function startSync() {
+  syncInterval = setInterval(async () => {
+    try {
+      const res = await fetch(FB_URL + '.json');
+      const data = await res.json();
+      if (data) {
+        const incoming = Array.isArray(data) ? data : Object.values(data);
+        const incomingHash = JSON.stringify(incoming);
+        if (incomingHash !== lastSavedHash) {
+          tableData = incoming;
+          lastSavedHash = incomingHash;
+          renderTable();
+          showToast('🔄 Tableau mis à jour');
+        }
+      }
+      setStatus('on', 'En direct ⚡');
+    } catch(e) {
+      setStatus('off', 'Hors ligne');
+    }
+  }, 4000);
+}
+
+// ── SAVE ──
 async function save() {
-  if (!dbRef) return;
   setStatus('busy', 'Sauvegarde...');
   try {
     const obj = {};
     tableData.forEach((row, i) => obj[i] = row);
-    await dbRef.set(obj);
+    await fetch(FB_URL + '.json', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(obj)
+    });
+    lastSavedHash = JSON.stringify(tableData);
     setStatus('on', 'En direct ⚡');
   } catch(e) {
     setStatus('off', 'Erreur sync');
