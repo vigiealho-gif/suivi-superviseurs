@@ -20,22 +20,7 @@
 *{box-sizing:border-box;margin:0;padding:0;}
 body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);}
 
-/* ── SETUP BANNER ── */
-#setupBanner {
-  background: #b71c1c; color: white;
-  padding: 14px 24px; font-size: 13px; line-height: 1.7;
-  border-bottom: 3px solid #7f0000;
-}
-#setupBanner strong { font-size: 14px; display: block; margin-bottom: 4px; }
-#setupBanner code {
-  background: rgba(255,255,255,0.2); padding: 2px 6px;
-  border-radius: 4px; font-family: 'DM Mono', monospace; font-size: 12px;
-}
-#setupBanner a { color: #ffcdd2; }
-.banner-close {
-  float: right; background: none; border: none; color: white;
-  font-size: 20px; cursor: pointer; margin-top: -2px;
-}
+
 
 /* ── LOGIN ── */
 .login-screen {
@@ -254,15 +239,7 @@ td.mcell:hover::after { opacity:1; }
 </head>
 <body>
 
-<!-- SETUP INSTRUCTIONS BANNER -->
-<div id="setupBanner">
-  <button class="banner-close" onclick="document.getElementById('setupBanner').style.display='none'">✕</button>
-  <strong>⚙️ CONFIGURATION REQUISE — À faire une seule fois (5 min)</strong>
-  1. Va sur <a href="https://console.firebase.google.com" target="_blank"><strong>console.firebase.google.com</strong></a> → Créer un projet (gratuit) → Active <strong>Realtime Database</strong> → Mode test<br>
-  2. Dans Paramètres du projet → Tes applications → Ajoute une app Web → Copie la config<br>
-  3. Dans ce fichier HTML, remplace <code>VOTRE_API_KEY</code>, <code>VOTRE_PROJECT</code> etc. par ta vraie config Firebase<br>
-  4. Dépose le fichier sur <strong>Netlify Drop</strong> → Partage le lien à tous les superviseurs ✅
-</div>
+
 
 <!-- LOGIN -->
 <div class="login-screen" id="loginScreen">
