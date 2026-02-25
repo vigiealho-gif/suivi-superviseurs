@@ -312,6 +312,7 @@ td.mcell:hover::after { opacity:1; }
       <thead>
         <tr>
           <th style="width:40px;text-align:center;">🗑️</th>
+        <th style="width:40px;text-align:center;">➕</th>
         <th>Responsable</th>
           <th>Date</th>
           <th>Log Agent</th>
@@ -514,6 +515,9 @@ function renderTable() {
       <td style="text-align:center;vertical-align:middle;">
         <button onclick="deleteRow(${i})" style="background:none;border:none;cursor:pointer;font-size:16px;color:#e53935;padding:2px 6px;border-radius:4px;transition:background 0.15s;" onmouseover="this.style.background='#ffebee'" onmouseout="this.style.background='none'" title="Supprimer la ligne">🗑️</button>
       </td>
+      <td style="text-align:center;vertical-align:middle;">
+        <button onclick="insertRow(${i})" style="background:none;border:none;cursor:pointer;font-size:16px;color:#2ead6b;padding:2px 6px;border-radius:4px;transition:background 0.15s;" onmouseover="this.style.background='#e8f5e9'" onmouseout="this.style.background='none'" title="Insérer une ligne en dessous">➕</button>
+      </td>
       <td class="tname" contenteditable="true" onblur="upd(${i},'r',this.innerText)">${esc(row.r)}</td>
       <td class="tdate" contenteditable="true" onblur="upd(${i},'d',this.innerText)">${esc(row.d)}</td>
       <td contenteditable="true" onblur="upd(${i},'a',this.innerText)">${esc(row.a)}</td>
@@ -610,6 +614,18 @@ async function deleteRow(i) {
   renderTable();
   await save();
   showToast('🗑️ Ligne supprimée');
+}
+
+// ── INSERT ROW ──
+async function insertRow(i) {
+  const newRow = {
+    r: currentUser, d: new Date().toISOString().slice(0,10),
+    a:'', dos:'', rei:'', bc:[], sc:[], ac:[], by:currentUser
+  };
+  tableData.splice(i + 1, 0, newRow);
+  renderTable();
+  await save();
+  showToast('➕ Ligne ajoutée');
 }
 
 // ── EXPORT ──
