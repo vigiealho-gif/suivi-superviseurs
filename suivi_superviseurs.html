@@ -316,6 +316,7 @@ td.mcell:hover::after { opacity:1; }
         <th>Responsable</th>
           <th>Date</th>
           <th>Log Agent</th>
+          <th>Nom & Prénom Agent</th>
           <th>Num Dossier</th>
           <th>Réitération</th>
           <th class="mc">🔵 Blocage — Choix</th>
@@ -355,12 +356,14 @@ const BLOCAGES = [
   "Solution apportée ne répondant pas aux attentes du client",
   "Délai de traitement anormalement long",
   "La réponse du vendeur ne convient pas au client",
-  "Réponses contradictoires communiquées au client"
+  "Réponses contradictoires communiquées au client",
+  "__AUTRE__"
 ];
 const SOLUTIONS = [
   "Arbitrage exceptionnel hors process (remboursement)",
   "Proposer une alternative conforme au process",
-  "Accorder un geste commercial adapté et justifié"
+  "Accorder un geste commercial adapté et justifié",
+  "__AUTRE__"
 ];
 const ARGUMENTS = [
   "Nombre de réitérations élevé",
@@ -371,7 +374,8 @@ const ARGUMENTS = [
   "Chiffre d'affaires généré par le client",
   "Historique client positif",
   "Blocage perçu comme injuste ou incohérent",
-  "Impact émotionnel important (client en forte détresse ou colère)"
+  "Impact émotionnel important (client en forte détresse ou colère)",
+  "__AUTRE__"
 ];
 
 const DEFAULT = [
@@ -521,6 +525,7 @@ function renderTable() {
       <td class="tname" contenteditable="true" onblur="upd(${i},'r',this.innerText)">${esc(row.r)}</td>
       <td class="tdate" contenteditable="true" onblur="upd(${i},'d',this.innerText)">${esc(row.d)}</td>
       <td contenteditable="true" onblur="upd(${i},'a',this.innerText)">${esc(row.a)}</td>
+      <td contenteditable="true" onblur="upd(${i},'np',this.innerText)">${esc(row.np||'')}</td>
       <td class="tn" contenteditable="true" onblur="upd(${i},'dos',this.innerText)">${esc(row.dos)}</td>
       <td class="tn" contenteditable="true" onblur="upd(${i},'rei',this.innerText)">${esc(row.rei)}</td>
       <td class="mcell" onclick="openModal(${i},'bc')">
@@ -562,7 +567,27 @@ function openModal(ri, field) {
   const sel = tableData[ri][field] || [];
 
   document.getElementById('modalTitle').textContent = titles[field];
+
+  // Find existing "autre" value if any
+  const autreVal = sel.find(v => !cCh.filter(c=>c!=='__AUTRE__').includes(v)) || '';
+
   document.getElementById('modalBody').innerHTML = cCh.map((c, i) => {
+    if (c === '__AUTRE__') {
+      const chk = autreVal !== '';
+      return `<div class="ci ${chk?'ck':''}" id="ci_${i}" style="flex-direction:column;align-items:flex-start;">
+        <div style="display:flex;align-items:center;gap:11px;width:100%;">
+          <input type="checkbox" id="chk_${i}" ${chk?'checked':''} onchange="sc2(${i})">
+          <label for="chk_${i}" style="font-weight:600;color:#4285f4;">✏️ Autre (préciser)</label>
+        </div>
+        <input type="text" id="autre_txt" placeholder="Saisissez votre texte..." 
+          value="${autreVal}"
+          style="margin-top:8px;margin-left:28px;width:calc(100% - 28px);padding:8px 12px;
+          border:2px solid #d0e4ff;border-radius:8px;font-family:'DM Sans',sans-serif;
+          font-size:13px;outline:none;"
+          onfocus="document.getElementById('chk_${i}').checked=true;sc2(${i})"
+        >
+      </div>`;
+    }
     const chk = sel.includes(c);
     return `<div class="ci ${chk?'ck':''}" id="ci_${i}">
       <input type="checkbox" id="chk_${i}" ${chk?'checked':''} onchange="sc2(${i})">
@@ -585,7 +610,16 @@ function updCnt() {
 }
 async function saveModal() {
   const sel = [];
-  cCh.forEach((c, i) => { if(document.getElementById('chk_'+i)?.checked) sel.push(c); });
+  cCh.forEach((c, i) => {
+    if(document.getElementById('chk_'+i)?.checked) {
+      if (c === '__AUTRE__') {
+        const txt = document.getElementById('autre_txt')?.value.trim();
+        if (txt) sel.push(txt);
+      } else {
+        sel.push(c);
+      }
+    }
+  });
   tableData[cRI][cF] = sel;
   tableData[cRI].by = currentUser;
   closeModal();
@@ -630,14 +664,14 @@ async function insertRow(i) {
 
 // ── EXPORT ──
 function exportExcel() {
-  const rows = [["Responsable","Date","Log Agent","Num Dossier","Réitération",
+  const rows = [["Responsable","Date","Log Agent","Nom & Prénom Agent","Num Dossier","Réitération",
     "Blocage — Choix","Solution — Choix","Arguments — Choix","Modifié par"]];
   tableData.forEach(r => rows.push([
-    r.r,r.d,r.a,r.dos,r.rei,
+    r.r,r.d,r.a,r.np||'',r.dos,r.rei,
     (r.bc||[]).join(' | '),(r.sc||[]).join(' | '),(r.ac||[]).join(' | '),r.by||''
   ]));
   const ws = XLSX.utils.aoa_to_sheet(rows);
-  ws['!cols'] = [{wch:14},{wch:12},{wch:16},{wch:13},{wch:10},
+  ws['!cols'] = [{wch:14},{wch:12},{wch:16},{wch:20},{wch:13},{wch:10},
     {wch:50},{wch:50},{wch:50},{wch:12}];
 
   // Style header row
